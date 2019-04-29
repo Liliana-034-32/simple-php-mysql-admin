@@ -1,0 +1,12 @@
+RewriteEngine on
+RewriteBase /
+
+RewriteRule ^data/db(.*)$ ?forbidden=yes
+RewriteRule ^source/_conf(.*)$ ?forbidden=yes
+RewriteRule ^(.*)views(.*)$ ?404=yes
+RewriteRule ^(.*)actions(.*)$ ?404=yes
+
+RewriteCond %{REQUEST_FILENAME} !-f
+
+DirectoryIndex index.php
+RewriteRule . index.php [L]
