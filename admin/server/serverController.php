@@ -1,6 +1,7 @@
 <?php
 
 $formInputEnbl = "disabled";
+$accessFile = true;
 
 if(isset($_GET['conn']) and $_GET['conn']=='cancel'){
     require_once($_SERVER["DOCUMENT_ROOT"]."/admin/server/views/formView.php");
@@ -11,11 +12,6 @@ if(isset($_GET['conn']) and $_GET['conn']=='cancel'){
     foreach($DB->connSettings as $key =>$value){
         if(isset($_POST[$key])){
             $DB->connSettings[$key]=$_POST[$key];
-            if($key!='CONN_PW'){
-                if($_POST[$key]==null){
-                    $svContErr[$key]="не задано";
-                }
-            }
         }else{
             $svContErr[$key]="отсутствует параметр";
         }
@@ -24,8 +20,8 @@ if(isset($_GET['conn']) and $_GET['conn']=='cancel'){
     if($svContErr!=null){
         $formInputEnbl=null;
     }else{
-        if(!file_put_contents($_SERVER["DOCUMENT_ROOT"].$DB->pathToConn, json_encode($DB->connSettings))){
-            $formInputEnbl['fileErr']="ошибка сохранения файла";
+        if(!file_put_contents($_SERVER["DOCUMENT_ROOT"].$pathToConn, json_encode($DB->connSettings))){
+            $accessFile = false;
         }
     }
     require_once($_SERVER["DOCUMENT_ROOT"]."/admin/server/views/formView.php");

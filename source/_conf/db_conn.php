@@ -1,1 +1,1 @@
-{"CONN_LOC":"localhost","CONN_USER":"root","CONN_PW":"","CONN_DB":"my_db"}
+{"CONN_LOC":"localhost","CONN_USER":"root","CONN_PW":"root","CONN_DB":"my_dbx"}

@@ -1,65 +1,115 @@
 <?php
-class DB
+class DB extends PDO
 {
-    public $dbLink = null;
     public $err = null;
-    public $connSettings = null;
-    public $pathToConn = "/source/_conf/db_conn.php";
+    public $pathToConn;
+    public $connSettings;
 
-    function readSettings()
+    function __construct($pathToConn){
+        $this->pathToConn = $pathToConn;
+        if(!$this->connSettings=json_decode(@file_get_contents($_SERVER["DOCUMENT_ROOT"].$this->pathToConn), true)){
+            $this->err = true;
+        }
+    }
+
+    function connectDb()
     {
-        if($this->connSettings=json_decode(@file_get_contents($_SERVER["DOCUMENT_ROOT"].$this->pathToConn), true)){
+        try {
+            parent::__construct('mysql:host='.$this->connSettings["CONN_LOC"].';dbname='.$this->connSettings["CONN_DB"],
+                $this->connSettings["CONN_USER"], $this->connSettings["CONN_PW"]);
+            return true;
+        }catch (Exception $e) {
+            $this->err = $e->getMessage();
+        }
+    }
+
+    function copyOne($rd)
+    {
+        $query_text="select * from ".$rd['table']." where ".$rd['field_id']."='".$rd['result'][$rd['field_id']]."'";
+        $query_res = $this->query($query_text);
+        if($query_res->rowCount()===1){
+            $rd['result']=$query_res->fetch(PDO::FETCH_ASSOC);
+            return $rd;
+        }else{
+            return false;
+        }
+    }
+    public function putOne($rd)
+    {
+        $queryToInsert = null;
+        $queryToInsert_temp = "(";
+        $queryToInsert .= "insert into ".$rd['table']." (\r";
+        foreach ($rd['result'] as $key => $value) {
+            if ($value === null) {
+                $queryToInsert_temp .= "null, ";
+            } else {
+                $queryToInsert_temp .= "'" . $value. "', ";
+            }
+            $queryToInsert .= $key . ", ";
+        }
+        $queryToInsert = substr($queryToInsert, 0, strlen($queryToInsert) - 2) . ")\r values \r";
+        $queryToInsert_temp = substr($queryToInsert_temp, 0, strlen($queryToInsert_temp) - 2) . ")";
+        $queryToInsert .= $queryToInsert_temp;
+        if($this->query($queryToInsert)){
             return true;
         }else{
-            $this->err['settings']='connection settings not found';
+            return false;
         }
     }
 
-    function connectServer()
+    function updateOne($rd)
     {
-        if (@$this->dbLink = mysql_connect($this->connSettings['CONN_LOC'], $this->connSettings['CONN_USER'],
-            $this->connSettings['CONN_PW'])) {
-            unset($this->err['conn']);
+        $query_text = "update ".$rd['table']." set ";
+        foreach ($rd['result'] as $key => $value) {
+            $query_text.=$key."=";
+            if ($value == null) {
+                $query_text .= "null, ";
+            } else {
+                $query_text .= "'" . $value. "', ";
+            }
+        }
+        $query_text = substr($query_text, 0, strlen($query_text) - 2) .
+            " where ".$rd['field_id']."='".$rd['result'][$rd['field_id']]."';";
+
+        if($this->query($query_text)){
             return true;
-        } else {
-            $this->err['conn'] = 'connection server fail';
-        }
-    }
-
-    function connect_db()
-    {
-        if ($this->connectServer()) {
-            if (mysql_select_db($this->connSettings['CONN_DB'], $this->dbLink)) {
-                unset($this->err['conn']);
-                return true;
-            }
-            else{
-                $this->err['conn'] = 'connection database fail';
-                return false;
-            }
-        }
-    }
-
-    function doQuery($queryText)
-    {
-        if ($doQuery = mysql_query($queryText)) {
-            unset ($this->err['doQuery']);
-            return $doQuery;
-        } else {
-            $this->err['doQuery'] = 'some error has occured';
+        }else{
             return false;
         }
     }
 
-    function doFetchRow($doQuery)
+    function removeOne($rd)
     {
-        if ($doFetchRow = @mysql_fetch_assoc($doQuery)){
-            unset ($this->err['doFetchRow']);
-            return $doFetchRow;
-        }else {
-            $this->err['doFetchRow'] = 'some error has occured';
+        $query_text="delete from ".$rd['table']." where ".$rd['field_id']."='".$rd['result'][$rd['field_id']]."'";
+        if($this->query($query_text)){
+            return true;
+        }else{
             return false;
         }
     }
+
+    function setDefault($rd)
+    {
+        $query_text = "SELECT `COLUMN_NAME`
+FROM `INFORMATION_SCHEMA`.`COLUMNS`
+WHERE `TABLE_SCHEMA`='".$this->connSettings['CONN_DB']."'
+    AND `TABLE_NAME`='".$rd['table']."'";
+
+        $query_res= $this->query($query_text);
+        while($query_row=$query_res->fetch(PDO::FETCH_ASSOC)){
+            $rd['result'][$query_row['COLUMN_NAME']]=null;
+        }
+        return $rd;
+    }
+
+    function checkDouble($rd){
+        $checkDouble_qry="select COUNT(".$rd['field_alias'].") as dblAlias from ".$rd["table"]." where ".$rd['field_alias']." = '".$rd['result'][$rd['field_alias']]."'";
+        $checkDouble_res = $this->query($checkDouble_qry);
+        $checkDouble_row = $checkDouble_res->fetch(PDO::FETCH_ASSOC);
+        if($checkDouble_row['dblAlias']==0){
+            return true;
+        }
+        return false;
+    }
+
 }
-?>

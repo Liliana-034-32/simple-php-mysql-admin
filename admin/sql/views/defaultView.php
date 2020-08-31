@@ -23,6 +23,7 @@ $appRJ->response['result'].= "<div class='contentBlock-frame'><div class='conten
     "<div class='queryPanel'><div class='queryPanel-left'><span class='resTxt'>Результат: </span>".
     "<div class='queryResults'>-</div></div><div class='queryPanel-right'>".
     "<input type='button' value='mkQuery' onclick='mkQuery()'></div></div>";
+
 $appRJ->response['result'].= "</div></div></div>";
 require_once($_SERVER["DOCUMENT_ROOT"] . "/admin/adminFooter/views/footerDefault.php");
 $appRJ->response['result'].= "</body></html>";

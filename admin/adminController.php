@@ -1,19 +1,17 @@
 <?php
-
-$adminModule = null;
-
-require_once($_SERVER["DOCUMENT_ROOT"]."/admin/modules_conf.php");
+require_once($_SERVER["DOCUMENT_ROOT"] . "/source/_conf/admin/options.php");
 
 if(isset($appRJ->server['reqUri_expl'][2]) and $appRJ->server['reqUri_expl'][2]!=null){
     $adminModule=$appRJ->server['reqUri_expl'][2];
 }
 
 require_once($_SERVER["DOCUMENT_ROOT"]."/source/DB_class.php");
+$connResult = false;
 
-$DB = new DB();
-$DB->readSettings();
-
-$connResult = $DB->connect_db();
+$DB = new DB($pathToConn);
+if($DB->connectDb()){
+        $connResult = true;
+}
 
 if((isset($_POST['login']) and $_POST['login']!=null) or (isset($_POST['password'])and $_POST['password']!=null)){
     $bdLogin=null;
@@ -39,6 +37,7 @@ if(isset($_SESSION['groups']['root']) and $_SESSION['groups']['root']>10){
     $moduleExist=false;
     if(is_null($adminModule)){
         require_once($_SERVER["DOCUMENT_ROOT"]."/admin/views/startView.php");
+
     }else{
         foreach ($adminModules as $key=>$value){
             if($adminModules[$key]['active']==true and $key == $adminModule){
@@ -47,7 +46,7 @@ if(isset($_SESSION['groups']['root']) and $_SESSION['groups']['root']>10){
                     $sModRes=true;
                 }elseif($key=="server" or $key=="adminUsers"){
                     $sModRes=true;
-                }elseif($key=='sql' and $DB->connectServer()){
+                }elseif($key=='sql' and strpos(" ".$DB->err, SQLSTATE_ERR)){
                     $sModRes=true;
                 }
                 if($sModRes===true){
